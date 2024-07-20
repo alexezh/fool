@@ -67,21 +67,36 @@ store.addType(`
 store.addPredicate(":Title => font_size(Title) > 30)")
 
 /**
- * the above is shorthand for 
+ * inline selector
  */
-store.addPredicate(":document.all(x => x.Type == \"Title\") => font_size(x) > 30)")
+store.addPredicate("font_size(:Title) > 30)")
+
+/**
+ * aliasing variable
+ */
+store.addPredicate("x:Title => font_size(x) > 30)")
+
+/**
+ * using default alias
+ */
+store.addPredicate(":Title => font_size(_) > 30)")
 
 /**
  * predicate can also check multiple elements, in which case will run over 
  * all combination of values
  */
-store.addPredicate("font_size(Title) > font_size(Heading(1))")
+store.addPredicate(":Title :Heading<1> => font_size(Title) > font_size(Heading<1>)")
 
 /**
    bit of meta programming. Heading<1> etc are types
    below we are saying that heading color should match between different levels
  */
-store.addPredicate("font_size(Heading<N>) >= font_size(Heading<N-1>)")
+store.addPredicate(":Heading<N> :Heading<N-1> => font_size(Heading<N>) >= font_size(Heading<N-1>)")
+
+/**
+ * the above is shorthand for following LINQ type expression
+ */
+store.addPredicate("x:document.all(x => x.Type == \"Title\") y:document.all(x => x.Type == \"Heading<1>\")) => font_size(x) > font_size(y))")
 
 /**
  * add empty facts just to define parameters for the model
