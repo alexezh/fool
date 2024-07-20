@@ -124,7 +124,7 @@ export function typeSelector(s: string | AstNode): AstNode {
 
 }
 
-export function genericType(s: string, param: AstNode): AstNode {
+export function genericType(s: string, param: AstNode | string): AstNode {
 
 }
 

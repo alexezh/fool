@@ -8,7 +8,7 @@ class BlueprintStore {
   public addType(s: string) {
 
   }
-  public addRule(s: string, ast?: AstNode) {
+  public addPredicate(s: string, ast?: AstNode) {
 
   }
   public defineRuleset(s: string) {
@@ -58,53 +58,67 @@ store.addType(`
   function picture_height(Pictire): PictureHeight;
 `);
 /**
- * rule is a predicate which is expected to be true
+ * predicate which is expected to be true
  * the terms in predicate are either constants or functions
+ * 
+ * predicate has to be true for all elements which are matched by a selector
+ * 
  */
-store.addRule("font_size(Title) > font_size(Heading(1))")
+store.addPredicate(":Title => font_size(Title) > 30)")
+
+/**
+ * the above is shorthand for 
+ */
+store.addPredicate(":document.all(x => x.Type == \"Title\") => font_size(x) > 30)")
+
+/**
+ * predicate can also check multiple elements, in which case will run over 
+ * all combination of values
+ */
+store.addPredicate("font_size(Title) > font_size(Heading(1))")
 
 /**
    bit of meta programming. Heading<1> etc are types
    below we are saying that heading color should match between different levels
  */
-store.addRule("font_size(Heading<N>) >= font_size(Heading<N-1>)")
+store.addPredicate("font_size(Heading<N>) >= font_size(Heading<N-1>)")
 
 /**
  * add empty facts just to define parameters for the model
  */
 
 // any object of Title type
-store.addRule("color(Title) == any", equal(funcCall("color", typeSelector("Title")), any()))
+store.addPredicate("color(Title) == any", equal(funcCall("color", typeSelector("Title")), any()))
 
 // title object of the document
-store.addRule("color(document.title) == any", equal(funcCall("color", partSelector("document.title")), any()))
+store.addPredicate("color(document.title) == any", equal(funcCall("color", partSelector("document.title")), any()))
 
-store.addRule("color(Heading<N>) == any", equal(funcCall("color", typeSelector(genericType("Heading", "N"))), any()))
-store.addRule("color(Heading<N>) == any", equal(
+store.addPredicate("color(Heading<N>) == any", equal(funcCall("color", typeSelector(genericType("Heading", "N"))), any()))
+store.addPredicate("color(Heading<N>) == any", equal(
   funcCall("color", typeSelector(genericType("Heading", aconst("N")))),
-  funcCall("color", typeSelector(genericType("Heading", sub(aconst("N"), aconst(XMLDocument"1")))))))
-store.addRule("color(Heading<N>) == color(Heading<N-1>)")
+  funcCall("color", typeSelector(genericType("Heading", sub(aconst("N"), aconst(("1"))))))))
+store.addPredicate("color(Heading<N>) == color(Heading<N-1>)")
 
 /**
  * documents can have same color
  */
-store.addRule("color(Title) == color(Heading(N))")
+store.addPredicate("color(Title) == color(Heading(N))")
 
 store.defineRuleset("picture_layout");
-store.addRule("picture_height(Picture) == block_height(Block)")
-store.addRule("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
-store.addRule("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
-store.addRule("iif(picture_complexity(Picture) == high, page_orientation(containing_page(Picture)) == landscape")
+store.addPredicate("picture_height(Picture) == block_height(Block)")
+store.addPredicate("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
+store.addPredicate("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
+store.addPredicate("iif(picture_complexity(Picture) == high, page_orientation(containing_page(Picture)) == landscape")
 
 store.defineRuleset("one_page_flyer";
-store.addRule("page_height(Body) == page_size()")
-store.addRule("page_size(Picture) == block_height(Block)")
-store.addRule("page_size(Picture) == block_height(Block)")
+store.addPredicate("page_height(Body) == page_size()")
+store.addPredicate("page_size(Picture) == block_height(Block)")
+store.addPredicate("page_size(Picture) == block_height(Block)")
 
 store.addBlueprint("create Body(Sequence(Picture, Table())", "one_page_flyer")
 
-store.addRule("type Picture")
-store.addRule("type Block: Paragraph[]")
+store.addPredicate("type Picture")
+store.addPredicate("type Block: Paragraph[]")
 
 store.addAction({ pred: "color(para: Para)", action: "set_paragraph_color(para, $x)" })
 store.addAction({ pred: "color(run: Run)", action: "set_run_color(para, $x)" })
@@ -135,5 +149,35 @@ compute({ query: "color(Heading(1))", given: "color(Title) == Blue)" }) => "Blue
 compute({ query: "font_size(Heading(1))", given: "" }) => "uniform(20, 30)"
 */
 // 
+type DocProp = {
+  t: "Color" | "PictureHeight"
+  v: string
+}
+
+type DocPart = {
+  t: "Body" | "Title" | "Heading1" | "Heading2" | "Paragrapm"
+  childred?: DocPart[]
+  props?: DocProp[]
+}
+
+let doc: DocPart = {
+  t: "Body",
+  childred: [
+    {
+      t: "Title",
+      props: [
+        {
+          t: "Color",
+          v: "0"
+        }
+      ]
+    },
+    {
+      t: "Paragrapm"
+    }
+  ]
+}
+
+store.eval(doc);
 
 console.log("hello world")
