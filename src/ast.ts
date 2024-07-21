@@ -123,7 +123,7 @@ export function funcCall(name: string, params: AstNode | string): CallNode {
   }
 }
 
-type SelectorNode = AstNode & {
+export type SelectorNode = AstNode & {
   value: AstNode
 }
 

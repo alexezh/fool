@@ -139,7 +139,7 @@ store.addMutator({ value: "x: PictureSize", pred: "picture_height(page: Picture)
 store.addMutator({ value: "x: PageOrientation", pred: "page_orientation(section: Section)", action: "set_page_orientation(page, x)" });
 
 /**
- * second wrap picture into section
+ * second wrap picture into a section
  */
 store.addMutator({ value: "", pred: "page_orientation(containing_picture(pic))", action: "wrap_picture(page); set_page_orientation(PictureOrientation.landscape);" });
 
