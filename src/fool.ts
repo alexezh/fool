@@ -100,7 +100,7 @@ store.defineRuleset("picture_layout");
 store.addPredicate("picture_height(Picture) == block_height(Block)")
 store.addPredicate("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
 store.addPredicate("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
-store.addPredicate("iif(picture_complexity(Picture) == high, page_orientation(containing_page(Picture)) == landscape")
+store.addPredicate("iif(picture_complexity(Picture) == high, section_orientation(containing_section(Picture)) == landscape")
 
 store.defineRuleset("one_page_flyer");
 store.addPredicate("page_height(Body) == page_size()")
@@ -122,8 +122,26 @@ store.addPredicate("type Block: Paragraph[]")
 store.addMutator({ value: "x: Color", pred: "color(para: Para)", action: "set_paragraph_color(para, x)" })
 store.addMutator({ value: "x: Color", pred: "color(run: Run)", action: "set_run_color(para, x)" })
 
+/**
+ * similar for picture size
+ */
 store.addMutator({ value: "x: PictureSize", pred: "picture_height(page: Picture)", action: "set_picture_height(Picture, x)" })
-store.addMutator({ value: "x: Color", pred: "page_orientation(page: Page)", action: "wrap_section(Picture)" });
+
+/**
+ * The predicate checks parent object of a picture = section_orientation(containing_section(Picture))
+ * 
+ * We want to wrap a picture if section is not landscape. There are two ways for doing this, we can either change
+ * existing section, or we can wrap picture into section. Potentially we can convert heading block into section. We are going
+ * to define mutators for all cases and learn the best approaches
+ * 
+ * first, first define method for changing page orientation and wrapping picture
+ */
+store.addMutator({ value: "x: PageOrientation", pred: "page_orientation(section: Section)", action: "set_page_orientation(page, x)" });
+
+/**
+ * second wrap picture into section
+ */
+store.addMutator({ value: "", pred: "page_orientation(containing_picture(pic))", action: "wrap_picture(page); set_page_orientation(PictureOrientation.landscape);" });
 
 /**
  * populate some sample data about two documents
