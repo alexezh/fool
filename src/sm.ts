@@ -1,3 +1,4 @@
+import { AstNode } from "./ast"
 import { BlueprintStore } from "./blueprintstore"
 
 export type DocProp = {
@@ -11,6 +12,36 @@ export type DocPart = {
   props?: DocProp[]
 }
 
-export function doceval(store: BlueprintStore, doc: DocPart): number {
+export function visitDocParts(part: DocPart, visitor: (part: DocPart) => boolean) {
+  if (!visitor(part)) {
+    return;
+  }
+  if (part.childred) {
+    for (let child of part.childred) {
+      visitDocParts(child, visitor);
+    }
+  }
+}
+
+/**
+ * 
+ */
+export type PBool = () => number;
+
+export function evalSelector(part: DocPart, selector: AstNode): {
+
+}
+
+export function selectMatchingParts(doc: DocPart, selector: AstNode) {
+  // in the future, we can index document by common patterns used by selector
+  // such as types of objects. For now, we can just run through
+  visitDocParts(doc, (part: ))
+  // if(selector.kind === )
+}
+
+export function evalDoc(store: BlueprintStore, doc: DocPart): number {
+  for (let pred of store.predicates()) {
+    selectMatchingParts(doc, pred.selector);
+  }
   return 0;
 }

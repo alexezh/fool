@@ -1,6 +1,6 @@
-import { AstNode, aconst, any, equal, funcCall, genericType, partSelector, sub, typeSelector } from "./ast";
+import { AstNode, any, constNode, equal, funcCall, genericType, partSelector, sub, typeSelector } from "./ast";
 import { BlueprintStore, MemoryLane } from "./blueprintstore";
-import { DocPart, doceval } from "./sm";
+import { DocPart, evalDoc } from "./sm";
 
 /**
  * fool is a reasoning engine which combines ideas of prolog and ML
@@ -10,6 +10,9 @@ import { DocPart, doceval } from "./sm";
  * Unlike prolog language (and boolean algebra), predicates and not boolean. Instead then
  * return probability functions (such as sigmoids) so we can apply gradient descent when
  * optimizing the model
+ * 
+ * The second part is mutators, which provides a way for system to solve the problem by
+ * changing the model
  */
 
 let store = new BlueprintStore();
@@ -79,13 +82,14 @@ store.addPredicate("x:document.all(x => x.Type == \"Title\") y:document.all(x =>
 store.addPredicate("color(Title) == any", typeSelector("Title"), equal(funcCall("color", "_"), any()))
 
 // title object of the document
-store.addPredicate("color(document.title) == any", equal(funcCall("color", partSelector("document.title")), any()))
+store.addPredicate("color(document.title) == any", partSelector("document.title"),
+  equal(funcCall("color", partSelector("_")), any()))
 
-store.addPredicate("color(Heading<N>) == any", equal(funcCall("color", typeSelector(genericType("Heading", "N"))), any()))
-store.addPredicate("color(Heading<N>) == any", equal(
-  funcCall("color", typeSelector(genericType("Heading", aconst("N")))),
-  funcCall("color", typeSelector(genericType("Heading", sub(aconst("N"), aconst(("1"))))))))
-store.addPredicate("color(Heading<N>) == color(Heading<N-1>)")
+store.addPredicate("color(Heading<N>) == any", typeSelector(genericType("Heading", "N")),
+  equal(funcCall("color", typeSelector(genericType("Heading", "N"))), any()))
+store.addPredicate("color(Heading<N>) == color(Heading<N-1>)", typeSelector("Heading"), equal(
+  funcCall("color", typeSelector(genericType("Heading", constNode("N")))),
+  funcCall("color", typeSelector(genericType("Heading", sub(constNode("N"), constNode(("1"))))))))
 
 /**
  * documents can have same color
@@ -108,10 +112,18 @@ store.addBlueprint("create Body(Sequence(Picture, Table())", "one_page_flyer")
 store.addPredicate("type Picture")
 store.addPredicate("type Block: Paragraph[]")
 
-store.addAction({ pred: "color(para: Para)", action: "set_paragraph_color(para, $x)" })
-store.addAction({ pred: "color(run: Run)", action: "set_run_color(para, $x)" })
-store.addAction({ pred: "picture_height(page: Picture)", action: "set_picture_height(Picture, x)" })
-store.addAction({ pred: "page_orientation(page: Page)", action: "wrap_section(Picture)" });
+/**
+ * mutators provide a way for system to change model and as a result change the result of predicates
+ * 
+ * the first two calls define mutators for paragraph and run color. It takes one parameter of type Color, and passes it
+ * to set_paragraph_color method. If predicate uses color(), the system will be able to adjust
+ * the color on the paragraph which matched selector
+ */
+store.addMutator({ value: "x: Color", pred: "color(para: Para)", action: "set_paragraph_color(para, x)" })
+store.addMutator({ value: "x: Color", pred: "color(run: Run)", action: "set_run_color(para, x)" })
+
+store.addMutator({ value: "x: PictureSize", pred: "picture_height(page: Picture)", action: "set_picture_height(Picture, x)" })
+store.addMutator({ value: "x: Color", pred: "page_orientation(page: Page)", action: "wrap_section(Picture)" });
 
 /**
  * populate some sample data about two documents
@@ -158,4 +170,4 @@ let doc: DocPart = {
 }
 
 console.log("hello world");
-doceval(store, doc);
+evalDoc(store, doc);
