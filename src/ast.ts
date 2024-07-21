@@ -38,13 +38,9 @@ export enum AstNodeKind {
   forever = 17,
   foreach = 18,
   while = 19,
-  on = 20,
   comment = 21,
-  linePlaceholder = 100,
-  idPlaceholder = 101,
-  expressionPlaceholder = 102,
-  paramPlaceholder = 103,
-  bodyPlaceholder = 104,
+  any = 22,
+  selector = 100
 }
 
 let nextId: number = 1;
@@ -59,8 +55,8 @@ export function makeAstId(): number {
 export type AstNode = {
   //[astTag]?: boolean;
   kind: AstNodeKind;
-  startToken: Token;
   id: number;
+  startToken?: Token;
   parent?: AstNode;
 }
 
@@ -82,7 +78,6 @@ export type ParamDefNode = AstNode & {
 }
 
 export type FuncDefNode = AstNode & {
-  module: ModuleNode;
   name: Token | undefined;
   returnType: Token | undefined;
   params: ParamDefNode[];
@@ -96,7 +91,6 @@ export type FieldDef = {
 }
 
 export type TypeDefNode = AstNode & {
-  digName: Token;
   systemType: Function | undefined;
   fields: FieldDef[];
 }
@@ -106,40 +100,71 @@ export type VarDefNode = AstNode & {
   value: ExpressionNode | undefined;
 }
 
-export function makeCall(node: AstNode): FuncDefNode {
+export function equal(left: AstNode, right: AstNode): OpNode {
   return {
-
+    kind: AstNodeKind.op,
+    id: makeAstId(),
+    left: left,
+    right: right
   }
 }
 
-export function equal(left: AstNode, right: AstNode): EqualNode {
-
+type CallNode = AstNode & {
+  name: string,
+  params: AstNode
 }
 
-export function funcCall(name: string, params: AstNode): AstNode {
-
+export function funcCall(name: string, params: AstNode | string): CallNode {
+  return {
+    kind: AstNodeKind.call,
+    name: name,
+    id: makeAstId(),
+    params: typeof (params) === "string" ? constNode(params) : params
+  }
 }
 
-export function typeSelector(s: string | AstNode): AstNode {
-
+type SelectorNode = AstNode & {
+  value: AstNode
 }
 
-export function genericType(s: string, param: AstNode | string): AstNode {
-
+export function typeSelector(s: string | AstNode): SelectorNode {
+  return {
+    kind: AstNodeKind.selector,
+    id: makeAstId(),
+    value: typeof (s) === "string" ? constNode(s) : s
+  }
 }
 
-export function aconst(s: string): AstNode {
-
+export type TypeRefNode = AstNode & {
+  param: AstNode
 }
-export function sub(n1: AstNode, n2: AstNode): AstNode {
 
+export function genericType(s: string, param: AstNode | string): TypeRefNode {
+  return {
+    kind: AstNodeKind.typeDef,
+    id: makeAstId(),
+    param: typeof (param) === "string" ? constNode(param) : param
+  }
 }
+
+export function sub(n1: AstNode, n2: AstNode): OpNode {
+  return {
+    kind: AstNodeKind.op,
+    id: makeAstId(),
+    left: n1,
+    right: n2
+  }
+}
+
 export function partSelector(s: string): AstNode {
-
+  return null;
 }
 
 export function any(): AstNode {
-
+  return {
+    kind: AstNodeKind.any,
+    id: makeAstId(),
+  }
 }
 
 export type EqualNode = AstNode;
@@ -157,26 +182,27 @@ export type CallParamNode = ExpressionNode & {
   name: Token | undefined;
 }
 
-export type CallNode = StatementNode & {
-  name: Token;
-  params: CallParamNode[];
-  funcDef?: FuncDefNode;
-}
+// export type CallNode = StatementNode & {
+//   name: Token;
+//   params: CallParamNode[];
+//   funcDef?: FuncDefNode;
+// }
 
 export type OpNode = AstNode & {
-  op: Token;
+  op?: Token;
+  left: AstNode;
+  right: AstNode;
 }
 
 export type ConstNode = AstNode & {
-  value: Token;
+  value: Token | string;
 }
 
-export function makeConstNode(token: Token): ConstNode {
+export function constNode(val: string): ConstNode {
   return {
     kind: AstNodeKind.const,
     id: makeAstId(),
-    startToken: token,
-    value: token
+    value: val
   }
 }
 
@@ -233,32 +259,6 @@ export type WhileNode = StatementNode & {
   body: BlockNode
 }
 
-export function insertPlaceholderBefore(before: AstNode): AstNode {
-  if (!before.parent) {
-    throw new ParseError(ParseErrorCode.InvalidArg, undefined, 'Cannot get parent');
-  }
-
-  // we can only insert empty line if there is a block
-  if (before.parent.kind === AstNodeKind.block) {
-    let ph: LinePlaceholderNode = {
-      kind: AstNodeKind.linePlaceholder,
-      id: makeAstId(),
-      startToken: Token.makeWs()
-    };
-
-    let block = before.parent as BlockNode;
-    let idx = block.statements.findIndex((e) => e === before);
-    if (idx === -1) {
-      throw new ParseError(ParseErrorCode.InvalidArg, undefined, 'Cannot find node');
-    }
-    ph.parent = block;
-    block.statements.splice(idx, 0, ph);
-    return ph;
-  } else {
-    return insertPlaceholderBefore(before.parent);
-  }
-}
-
 /**
  * for now we are going to treat any object with .kind property as ast
  * layer we can add symbol tag if needed
@@ -279,52 +279,3 @@ export function* getChildNodes(ast: AstNode): Iterable<AstNode> {
   }
 }
 
-/**
- * for now we are going to treat any object with .kind property as ast
- * layer we can add symbol tag if needed
- */
-export function getModule(ast: AstNode): ModuleNode | undefined {
-
-  while (true) {
-    if (ast.kind === AstNodeKind.module) {
-      return (ast as ModuleNode);
-    }
-    if (!ast.parent) {
-      return undefined;
-    }
-    ast = ast.parent;
-  }
-}
-
-/**
- * replace node with new node by scanning parent node
- */
-export function replaceNode(cur: AstNode, upd: AstNode) {
-  let parent = cur.parent;
-  if (!parent) {
-    throw new ParseError(ParseErrorCode.InvalidArg, undefined, 'Unconnected node');
-  }
-
-  for (let k in parent) {
-    let field = parent[k];
-    if (Array.isArray(field)) {
-      for (let i = 0; i < field.length; i++) {
-        let arrVal = field[i];
-        if (arrVal.kind !== undefined) {
-          let arrValAst = arrVal as AstNode;
-          if (arrValAst.id === cur.id) {
-            field[i] = upd;
-            return;
-          }
-        }
-      }
-    }
-    else if (field.kind !== undefined) {
-      let fieldAst = field as AstNode;
-      if (fieldAst.id === cur.id) {
-        parent[k] = upd;
-        return;
-      }
-    }
-  }
-}

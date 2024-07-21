@@ -1,43 +1,16 @@
 import { AstNode, aconst, any, equal, funcCall, genericType, partSelector, sub, typeSelector } from "./ast";
+import { BlueprintStore, MemoryLane } from "./blueprintstore";
+import { DocPart, doceval } from "./sm";
 
-interface IRule {
-
-}
-
-class BlueprintStore {
-  public addType(s: string) {
-
-  }
-  public addPredicate(s: string, ast?: AstNode) {
-
-  }
-  public defineRuleset(s: string) {
-
-  }
-  public addBlueprint(s: string, blueprint?: string) {
-
-  }
-  public addAction(a: { pred: string, action: string }) {
-
-  }
-}
-
-class MemoryLane {
-  public setContext(x: string) {
-
-  }
-  public addMemory(s: string) {
-
-  }
-}
-
-function makeRule(s: string): IRule {
-  return null as unknown as IRule;
-}
-
-function compute(s: { query: string, given: string }): any {
-
-}
+/**
+ * fool is a reasoning engine which combines ideas of prolog and ML
+ * the idea is to represent knowledge as set of predicates which are either
+ * hardcoded or inferred from the data and perform actions to maximize predicates
+ * 
+ * Unlike prolog language (and boolean algebra), predicates and not boolean. Instead then
+ * return probability functions (such as sigmoids) so we can apply gradient descent when
+ * optimizing the model
+ */
 
 let store = new BlueprintStore();
 let lane = new MemoryLane();
@@ -103,7 +76,7 @@ store.addPredicate("x:document.all(x => x.Type == \"Title\") y:document.all(x =>
  */
 
 // any object of Title type
-store.addPredicate("color(Title) == any", equal(funcCall("color", typeSelector("Title")), any()))
+store.addPredicate("color(Title) == any", typeSelector("Title"), equal(funcCall("color", "_"), any()))
 
 // title object of the document
 store.addPredicate("color(document.title) == any", equal(funcCall("color", partSelector("document.title")), any()))
@@ -125,7 +98,7 @@ store.addPredicate("picture_height(Picture) + line_height(Block) * 2 < block_hei
 store.addPredicate("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
 store.addPredicate("iif(picture_complexity(Picture) == high, page_orientation(containing_page(Picture)) == landscape")
 
-store.defineRuleset("one_page_flyer";
+store.defineRuleset("one_page_flyer");
 store.addPredicate("page_height(Body) == page_size()")
 store.addPredicate("page_size(Picture) == block_height(Block)")
 store.addPredicate("page_size(Picture) == block_height(Block)")
@@ -164,16 +137,7 @@ compute({ query: "color(Heading(1))", given: "color(Title) == Blue)" }) => "Blue
 compute({ query: "font_size(Heading(1))", given: "" }) => "uniform(20, 30)"
 */
 // 
-type DocProp = {
-  t: "Color" | "PictureHeight"
-  v: string
-}
-
-type DocPart = {
-  t: "Body" | "Title" | "Heading1" | "Heading2" | "Paragrapm"
-  childred?: DocPart[]
-  props?: DocProp[]
-}
+//store.eval(doc);
 
 let doc: DocPart = {
   t: "Body",
@@ -193,6 +157,5 @@ let doc: DocPart = {
   ]
 }
 
-store.eval(doc);
-
-console.log("hello world")
+console.log("hello world");
+doceval(store, doc);
