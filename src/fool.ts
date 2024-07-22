@@ -135,6 +135,11 @@ store.addPredicate("content_height(Body) == page_size()")
 store.addPredicate("content_has(body, Title) && content_has(body, Figure) && content_has(body, InfoBlock)")
 
 /*
+ * need better syntax. We want to say that figure is either picture, or list of pictures  
+ */
+store.addPredicate("figure = Picture || [Picture, next_element(Picture)]" })
+
+/*
  * info block must be a table. Need to work on this if we want to format table into something
  */
 store.addPredicate("content_kind(InfoBlock, Table)")
@@ -143,11 +148,6 @@ store.addPredicate("content_kind(InfoBlock, Table)")
  * for mutator, we want to scale figure (which is one or more pictures)
  */
 store.addMutator({ value: "", pred: "content_height(content: Body)", action: "set_figure_height(Body.Figure, x)" })
-
-/*
- * mutator for combining multiple pictures into a single figure
- */
-store.addMutator({ value: "", pred: "make_figure(Picture[])", action: "make_figure(Body.Figure, x)" })
 
 store.addDesign("create Body(Sequence(Picture, Table())", "one_page_flyer")
 
