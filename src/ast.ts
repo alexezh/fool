@@ -1,5 +1,5 @@
-import { Token } from "./token";
-import { ParseError, ParseErrorCode } from "./parseerror";
+import { Token, TokenKind } from "./token";
+import type { DocPart } from "./sm";
 
 export enum AstErrorCode {
   generic,
@@ -103,6 +103,7 @@ export type VarDefNode = AstNode & {
 export function equal(left: AstNode, right: AstNode): OpNode {
   return {
     kind: AstNodeKind.op,
+    op: new Token(TokenKind.Equal, "==", 0),
     id: makeAstId(),
     left: left,
     right: right
