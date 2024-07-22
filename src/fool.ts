@@ -81,6 +81,16 @@ store.addPredicate("x:document.all(x => x.Type == \"Title\") y:document.all(x =>
 // any object of Title type
 store.addPredicate("color(Title) == any", typeSelector("Title"), equal(funcCall("color", "_"), any()))
 
+/**
+ * mutators provide a way for system to change model and as a result change the result of predicates
+ * 
+ * the first two calls define mutators for paragraph and run color. It takes one parameter of type Color, and passes it
+ * to set_paragraph_color method. If predicate uses color(), the system will be able to adjust
+ * the color on the paragraph which matched selector
+ */
+store.addMutator({ value: "x: Color", pred: "color(para: Para)", action: "set_paragraph_color(para, x)" })
+store.addMutator({ value: "x: Color", pred: "color(run: Run)", action: "set_run_color(para, x)" })
+
 // title object of the document
 store.addPredicate("color(document.title) == any", partSelector("document.title"),
   equal(funcCall("color", partSelector("_")), any()))
@@ -102,30 +112,48 @@ store.addPredicate("picture_height(Picture) + line_height(Block) * 2 < block_hei
 store.addPredicate("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
 store.addPredicate("iif(picture_complexity(Picture) == high, section_orientation(containing_section(Picture)) == landscape")
 
-store.defineRuleset("one_page_flyer");
-store.addPredicate("page_height(Body) == page_size()")
-store.addPredicate("page_size(Picture) == block_height(Block)")
-store.addPredicate("page_size(Picture) == block_height(Block)")
-
-store.addBlueprint("create Body(Sequence(Picture, Table())", "one_page_flyer")
-
-store.addPredicate("type Picture")
-store.addPredicate("type Block: Paragraph[]")
-
-/**
- * mutators provide a way for system to change model and as a result change the result of predicates
- * 
- * the first two calls define mutators for paragraph and run color. It takes one parameter of type Color, and passes it
- * to set_paragraph_color method. If predicate uses color(), the system will be able to adjust
- * the color on the paragraph which matched selector
- */
-store.addMutator({ value: "x: Color", pred: "color(para: Para)", action: "set_paragraph_color(para, x)" })
-store.addMutator({ value: "x: Color", pred: "color(run: Run)", action: "set_run_color(para, x)" })
-
 /**
  * similar for picture size
  */
 store.addMutator({ value: "x: PictureSize", pred: "picture_height(page: Picture)", action: "set_picture_height(Picture, x)" })
+
+/*
+ * flyer is single page document which can have multiple designs inclidong
+ *   - Figure on top (which can be one or more pictures) and table on the bottom
+ *   - Figure across page with table overlaying
+ */
+store.defineRuleset("one_page_flyer");
+
+/*
+ * content must be on one page
+ */
+store.addPredicate("content_height(Body) == page_size()")
+
+/*
+ * content must have title, figure and table
+ */
+store.addPredicate("content_has(body, Title) && content_has(body, Figure) && content_has(body, InfoBlock)")
+
+/*
+ * info block must be a table. Need to work on this if we want to format table into something
+ */
+store.addPredicate("content_kind(InfoBlock, Table)")
+
+/*
+ * for mutator, we want to scale figure (which is one or more pictures)
+ */
+store.addMutator({ value: "", pred: "content_height(content: Body)", action: "set_figure_height(Body.Figure, x)" })
+
+/*
+ * mutator for combining multiple pictures into a single figure
+ */
+store.addMutator({ value: "", pred: "make_figure(Picture[])", action: "make_figure(Body.Figure, x)" })
+
+store.addDesign("create Body(Sequence(Picture, Table())", "one_page_flyer")
+
+store.addPredicate("type Picture")
+store.addPredicate("type Block: Paragraph[]")
+
 
 /**
  * The predicate checks parent object of a picture = section_orientation(containing_section(Picture))
