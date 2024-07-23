@@ -11,8 +11,3 @@ export class JsWriter {
   }
 }
 
-export class CodeLib {
-  public getCode(name: string): string {
-    return '';
-  }
-}

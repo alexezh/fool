@@ -137,7 +137,7 @@ store.addPredicate("content_has(body, Title) && content_has(body, Figure) && con
 /*
  * need better syntax. We want to say that figure is either picture, or list of pictures  
  */
-store.addPredicate("figure = Picture || [Picture, next_element(Picture)]" })
+store.addPredicate("figure = Picture || [Picture, next_element(Picture)]")
 
 /*
  * info block must be a table. Need to work on this if we want to format table into something

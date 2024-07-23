@@ -110,17 +110,17 @@ export function equal(left: AstNode, right: AstNode): OpNode {
   }
 }
 
-type CallNode = AstNode & {
+export type CallNode = AstNode & {
   name: string,
-  params: AstNode
+  params?: AstNode[]
 }
 
-export function funcCall(name: string, params: AstNode | string): CallNode {
+export function funcCall(name: string, param: AstNode | string): CallNode {
   return {
     kind: AstNodeKind.call,
     name: name,
     id: makeAstId(),
-    params: typeof (params) === "string" ? constNode(params) : params
+    params: typeof (param) === "string" ? [constNode(param)] : [param]
   }
 }
 
@@ -189,10 +189,16 @@ export type CallParamNode = ExpressionNode & {
 //   funcDef?: FuncDefNode;
 // }
 
+type TypeDef = {
+  name: string;
+}
+
 export type OpNode = AstNode & {
   op?: Token;
   left: AstNode;
   right: AstNode;
+  leftType?: TypeDef;
+  rightType?: TypeDef;
 }
 
 export type ConstNode = AstNode & {
