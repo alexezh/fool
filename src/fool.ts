@@ -33,14 +33,15 @@ store.addType(`
   function picture_height(Pictire): PictureHeight;
   function picture_height(Pictire): PictureHeight;
 `);
+
 /**
  * predicate which is expected to be true
  * the terms in predicate are either constants or functions
  * 
  * predicate has to be true for all elements which are matched by a selector
  * 
+ * next predicate ensures that Title font size is at least 30
  */
-//store.addPredicate(":Title => font_size(Title) > 30)")
 store.addPredicate(equal(docpart_kind(part), "Title"), greater(funcCall("font_size", 0), 30))
 
 /*
@@ -51,33 +52,54 @@ store.addPredicate(equal(docpart_kind(part), "Title"), greater(funcCall("font_si
  * we are going to record all values of color(Title) and setup value as any_color as P(color)
  * this will give us weight for rule such as that if color matches one of colors we've seen we know the P
  * otherwise, we can set probability to low default value
+ *
+ * The distribution of any_color is affected by user selection. If we know that user changed Title color
+ * we will reset probability to look like sigmoid, with user selected value having highest probability
  */
 store.addPredicate(docpart_kind(part) == "Title", equal(funcCall("color", 0), any_color()))
+
+/*
+ * similarly, we want to ensure that paragraphs are consistent across the board
+ * we do not expect this rule to have high weight
+ *
+ * unlike title, we will have a lot of paragraphs. A user might change color to any specific paragraph
+ * We are going to keep all colors which user applies in distribution for this rule (removing if necessary)
+ * this way, if user selected 3 colors across paragraphs, we will keep all three colors and suggest other 
+ * paragraphs to one of them
+ */
+store.addPredicate(docpart_kind(part) == "Paragraph", equal(funcCall("color", 0), any_color()))
+
+/*
+ * however, this rules might have higher value as it checks that all paragraphs are from same theme
+ */
+store.addPredicate(docpart_kind(part) == "Paragraph", equal(funcCall("theme", 0), any_theme()))
+
+/*
+* limits number of colors across paragraphs to 3
+* the predicate does not have mutators by itself, but it references rules which are affected
+*/
+store.addPredicate(unique(funcCall("color", part)), less(array_length(0), 3), "color")
+
+function *iterateHeaderLevel(): Iterable<number[]> { 
+  for(let i = 0; i < 9; i++) yeild([i]); 
+}
 
 /*
  * isdarker(color(Title), color(Heading))
  *
  * for any heading, checks that color of heading is darker than title color
  */
-store.addPredicate(
+store.addMacroPredicate(
+  iterateHeaderLevel,
   [
     equal(docpart_kind(part), "Title"), 
-    equal(docpart_kind(part), "Heading1" | "Heading2"), 
+    equal(docpart_kind(part), "Heading$1"), 
   ],
   color_darker(funcCall("color", 0), funcCall("color", 1)))
 
-/*
- * equal(color(Heading1)) = value()
- *
- * for colors (as well as other properties we want consistency across document)
- * so if we make decision, it should be the same
- */
-store.addPredicate(
-  [
-    equal(docpart_kind(part), "Heading"), 
-    equal(docpart_kind(part), "Heading1" | "Heading2"), 
-  ],
-  color_same(funcCall("color", 0), funcCall("color", 1)))
+function *iterateHeaderPairs(): Iterable<number[]> { 
+  for(let i = 0; i < 9; i++) yeild([i, i+1]); 
+}
 
 /*
  * isdarker(color(Heading1), color(Heading2))
@@ -85,10 +107,11 @@ store.addPredicate(
  * for heading hierarchy, force hierarchy color
  * the colors can be different in different parts of document
  */
-store.addPredicate(
+store.addMacroPredicate(
+  iterateHeaderPairs,
   [
-    equal(docpart_kind(part), "Heading"), 
-    equal(docpart_kind(part), "Heading1" | "Heading2"), 
+    equal(docpart_kind(part), "Heading$0"), 
+    equal(docpart_kind(part), "Heading$1"), 
   ],
   color_same(funcCall("color", 0), funcCall("color", 1)))
 
