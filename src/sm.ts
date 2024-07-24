@@ -10,6 +10,7 @@ export type DocPart = {
   t: "Body" | "Title" | "Heading1" | "Heading2" | "Paragrapm"
   childred?: DocPart[]
   props?: DocProp[]
+  color?: number;
 }
 
 export function visitDocParts(part: DocPart, visitor: (part: DocPart) => boolean) {
@@ -24,25 +25,17 @@ export function visitDocParts(part: DocPart, visitor: (part: DocPart) => boolean
 }
 
 /**
- * 
+ * boolean
  */
-export type PBool = {
-  ptrue: number,
-  pfalse: number
+export type PBool = number & {
+  __bool__: boolean
 };
 
-export const PFalse: PBool = {
-  ptrue: 0,
-  pfalse: 1
-}
-
-export const PTrue: PBool = {
-  ptrue: 0,
-  pfalse: 1
-}
+export const PFalse: PBool = 0 as PBool;
+export const PTrue: PBool = 1 as PBool;
 
 export function isPFalse(v: PBool): boolean {
-  return v.ptrue < 0.000001 && v.pfalse > 0.99999
+  return v < 0.000001;
 }
 
 export function evalSelector(part: DocPart, selector: SelectorNode): PBool {

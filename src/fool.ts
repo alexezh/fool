@@ -1,4 +1,4 @@
-import { AstNode, any, constNode, equal, funcCall, genericType, partSelector, sub, typeSelector } from "./ast";
+import { AstNode, anyNode, constNode, equal, funcCall, genericType, paramNode, partSelector, selectorRef, sub, typeRef, typeSelector } from "./ast";
 import { BlueprintStore, MemoryLane } from "./blueprintstore";
 import { DocPart, evalDoc } from "./sm";
 
@@ -79,7 +79,9 @@ store.addPredicate("x:document.all(x => x.Type == \"Title\") y:document.all(x =>
  */
 
 // any object of Title type
-store.addPredicate("color(Title) == any", typeSelector("Title"), equal(funcCall("color", "_"), any()))
+store.addPredicate("color(Title) == any",
+  typeSelector("1", typeRef("Title")),
+  equal(funcCall("color", paramNode(selectorRef("1"))), anyNode()))
 
 /**
  * mutators provide a way for system to change model and as a result change the result of predicates
@@ -92,14 +94,18 @@ store.addMutator({ value: "x: Color", pred: "color(para: Para)", action: "set_pa
 store.addMutator({ value: "x: Color", pred: "color(run: Run)", action: "set_run_color(para, x)" })
 
 // title object of the document
-store.addPredicate("color(document.title) == any", partSelector("document.title"),
-  equal(funcCall("color", partSelector("_")), any()))
+// store.addPredicate("color(document.title) == any", partSelector("document.title"),
+//   equal(funcCall("color", paramNode(partSelector("_"))), any()))
 
-store.addPredicate("color(Heading<N>) == any", typeSelector(genericType("Heading", "N")),
-  equal(funcCall("color", typeSelector(genericType("Heading", "N"))), any()))
-store.addPredicate("color(Heading<N>) == color(Heading<N-1>)", typeSelector("Heading"), equal(
-  funcCall("color", typeSelector(genericType("Heading", constNode("N")))),
-  funcCall("color", typeSelector(genericType("Heading", sub(constNode("N"), constNode(("1"))))))))
+// store.addPredicate("color(Heading<N>) == any",
+//   typeSelector("1", genericType("Heading", "N")),
+//   equal(funcCall("color", paramNode(selectorRef("1"))), paramNode(anyNode())));
+
+// store.addPredicate("color(Heading<N>) == color(Heading<N-1>)",
+//   typeSelector("1", typeRef("Heading")),
+//   equal(
+//     funcCall("color", paramNode(selectorRef("1"))),
+//     funcCall("color", paramNode(selectorRef("2")))))
 
 /**
  * documents can have same color

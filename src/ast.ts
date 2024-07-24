@@ -40,7 +40,9 @@ export enum AstNodeKind {
   while = 19,
   comment = 21,
   any = 22,
-  selector = 100
+  typeRef = 23,
+  selector = 100,
+  selectorRef = 101
 }
 
 let nextId: number = 1;
@@ -112,39 +114,81 @@ export function equal(left: AstNode, right: AstNode): OpNode {
 
 export type CallNode = AstNode & {
   name: string,
-  params?: AstNode[]
+  params?: ParamNode[]
 }
 
-export function funcCall(name: string, param: AstNode | string): CallNode {
+export type ParamNode = AstNode & {
+  // set during binding
+  t?: TypeDef;
+  value: AstNode;
+}
+export function paramNode(value: AstNode): ParamNode {
+  return {
+    kind: AstNodeKind.paramDef,
+    id: makeAstId(),
+    value: value
+  }
+}
+
+export function funcCall(name: string, ...param: ParamNode[]): CallNode {
   return {
     kind: AstNodeKind.call,
     name: name,
     id: makeAstId(),
-    params: typeof (param) === "string" ? [constNode(param)] : [param]
+    params: param
   }
 }
 
 export type SelectorNode = AstNode & {
+  /**
+   * internal name of selector for references
+   */
+  name: string;
   value: AstNode
 }
 
-export function typeSelector(s: string | AstNode): SelectorNode {
+export function typeSelector(name: string, value: AstNode): SelectorNode {
   return {
     kind: AstNodeKind.selector,
     id: makeAstId(),
-    value: typeof (s) === "string" ? constNode(s) : s
+    name: name,
+    value: value
+  }
+}
+
+export type SelectorRefNode = AstNode & {
+  name: string;
+}
+
+export function selectorRef(name: string): SelectorRefNode {
+  return {
+    kind: AstNodeKind.selectorRef,
+    id: makeAstId(),
+    name: name
   }
 }
 
 export type TypeRefNode = AstNode & {
-  param: AstNode
+  name: string,
+  // args for generics
+  args?: AstNode[],
+  typeDef?: TypeDef;
 }
 
-export function genericType(s: string, param: AstNode | string): TypeRefNode {
+export function typeRef(name: string): TypeRefNode {
   return {
     kind: AstNodeKind.typeDef,
     id: makeAstId(),
-    param: typeof (param) === "string" ? constNode(param) : param
+    name: name
+  }
+}
+
+export function genericType(s: string, ...param: AstNode[]): TypeRefNode {
+  return {
+    kind: AstNodeKind.typeDef,
+    id: makeAstId(),
+    name: s,
+    args: param
   }
 }
 
@@ -161,7 +205,7 @@ export function partSelector(s: string): AstNode {
   return null;
 }
 
-export function any(): AstNode {
+export function anyNode(): AstNode {
   return {
     kind: AstNodeKind.any,
     id: makeAstId(),
@@ -189,7 +233,7 @@ export type CallParamNode = ExpressionNode & {
 //   funcDef?: FuncDefNode;
 // }
 
-type TypeDef = {
+export type TypeDef = {
   name: string;
 }
 
