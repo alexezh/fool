@@ -40,7 +40,57 @@ store.addType(`
  * predicate has to be true for all elements which are matched by a selector
  * 
  */
-store.addPredicate(":Title => font_size(Title) > 30)")
+//store.addPredicate(":Title => font_size(Title) > 30)")
+store.addPredicate(equal(docpart_kind(part), "Title"), greater(funcCall("font_size", 0), 30))
+
+/*
+ * color(Title) == any
+ *
+ * the goal for this predicate is to provide way for system to mutate color(Title)
+ * the predicate is true for any value, but mutator can still change things. When we train
+ * we are going to record all values of color(Title) and setup value as any_color as P(color)
+ * this will give us weight for rule such as that if color matches one of colors we've seen we know the P
+ * otherwise, we can set probability to low default value
+ */
+store.addPredicate(docpart_kind(part) == "Title", equal(funcCall("color", 0), any_color()))
+
+/*
+ * isdarker(color(Title), color(Heading))
+ *
+ * for any heading, checks that color of heading is darker than title color
+ */
+store.addPredicate(
+  [
+    equal(docpart_kind(part), "Title"), 
+    equal(docpart_kind(part), "Heading1" | "Heading2"), 
+  ],
+  color_darker(funcCall("color", 0), funcCall("color", 1)))
+
+/*
+ * equal(color(Heading1)) = value()
+ *
+ * for colors (as well as other properties we want consistency across document)
+ * so if we make decision, it should be the same
+ */
+store.addPredicate(
+  [
+    equal(docpart_kind(part), "Heading"), 
+    equal(docpart_kind(part), "Heading1" | "Heading2"), 
+  ],
+  color_same(funcCall("color", 0), funcCall("color", 1)))
+
+/*
+ * isdarker(color(Heading1), color(Heading2))
+ *
+ * for heading hierarchy, force hierarchy color
+ * the colors can be different in different parts of document
+ */
+store.addPredicate(
+  [
+    equal(docpart_kind(part), "Heading"), 
+    equal(docpart_kind(part), "Heading1" | "Heading2"), 
+  ],
+  color_same(funcCall("color", 0), funcCall("color", 1)))
 
 /**
  * inline selector
@@ -77,9 +127,6 @@ store.addPredicate("x:document.all(x => x.Type == \"Title\") y:document.all(x =>
 /**
  * add empty facts just to define parameters for the model
  */
-
-// any object of Title type
-store.addPredicate("color(Title) == any", typeSelector("Title"), equal(funcCall("color", "_"), any()))
 
 /**
  * mutators provide a way for system to change model and as a result change the result of predicates
