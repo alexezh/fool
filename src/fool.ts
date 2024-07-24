@@ -176,11 +176,23 @@ store.addPredicate("color(Heading<N>) == color(Heading<N-1>)", typeSelector("Hea
  */
 store.addPredicate("color(Title) == color(Heading(N))")
 
-store.defineRuleset("picture_layout");
-store.addPredicate("picture_height(Picture) == block_height(Block)")
-store.addPredicate("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
-store.addPredicate("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
-store.addPredicate("iif(picture_complexity(Picture) == high, section_orientation(containing_section(Picture)) == landscape")
+store.addPredicateGroup("picture_layout", docpart_kind(part) == "Paragraph" && paragraph_contains("picture), () => {
+  /*
+  * related block is a model function which returns multiple blocks with probabilities
+  * we will back propagate probabilities through the system the same way
+  */                                                                                                 
+  store.addClause("block := related_block(para)")
+
+  /*
+  * now we have probable blocks, compute
+  */                                                                                                   
+  store.addClause("picture_height(Picture) == block_height(block)")
+                                                                                                  
+  store.addPredicate("picture_height(Picture) == block_height(Block)")
+  store.addPredicate("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
+  store.addPredicate("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
+  store.addPredicate("iif(picture_complexity(Picture) == high, section_orientation(containing_section(Picture)) == landscape")
+}
 
 /**
  * similar for picture size
@@ -192,54 +204,55 @@ store.addMutator({ value: "x: PictureSize", pred: "picture_height(page: Picture)
  *   - Figure on top (which can be one or more pictures) and table on the bottom
  *   - Figure across page with table overlaying
  */
-store.defineRuleset("one_page_flyer");
-
-/*
- * content must be on one page
- */
-store.addPredicate("content_height(Body) == page_size()")
-
-/*
- * content must have title, figure and table
- */
-store.addPredicate("content_has(body, Title) && content_has(body, Figure) && content_has(body, InfoBlock)")
-
-/*
- * need better syntax. We want to say that figure is either picture, or list of pictures  
- */
-store.addPredicate("figure = Picture || [Picture, next_element(Picture)]" })
-
-/*
- * info block must be a table. Need to work on this if we want to format table into something
- */
-store.addPredicate("content_kind(InfoBlock, Table)")
-
-/*
- * for mutator, we want to scale figure (which is one or more pictures)
- */
-store.addMutator({ value: "", pred: "content_height(content: Body)", action: "set_figure_height(Body.Figure, x)" })
-
-store.addDesign("create Body(Sequence(Picture, Table())", "one_page_flyer")
-
-store.addPredicate("type Picture")
-store.addPredicate("type Block: Paragraph[]")
-
-
-/**
- * The predicate checks parent object of a picture = section_orientation(containing_section(Picture))
- * 
- * We want to wrap a picture if section is not landscape. There are two ways for doing this, we can either change
- * existing section, or we can wrap picture into section. Potentially we can convert heading block into section. We are going
- * to define mutators for all cases and learn the best approaches
- * 
- * first, first define method for changing page orientation and wrapping picture
- */
-store.addMutator({ value: "x: PageOrientation", pred: "page_orientation(section: Section)", action: "set_page_orientation(page, x)" });
-
-/**
- * second wrap picture into a section
- */
-store.addMutator({ value: "", pred: "page_orientation(containing_picture(pic))", action: "wrap_picture(page); set_page_orientation(PictureOrientation.landscape);" });
+store.addPredicateGroup("one_page_flyer", document_kind(doc, "Flyer"), () => {
+                  
+  /*
+   * content must be on one page
+   */
+  store.addPredicate("content_height(Body) == page_size()")
+  
+  /*
+   * content must have title, figure and table
+   */
+  store.addPredicate("content_has(body, Title) && content_has(body, Figure) && content_has(body, InfoBlock)")
+  
+  /*
+   * need better syntax. We want to say that figure is either picture, or list of pictures  
+   */
+  store.addPredicate("figure = Picture || [Picture, next_element(Picture)]" })
+  
+  /*
+   * info block must be a table. Need to work on this if we want to format table into something
+   */
+  store.addPredicate("content_kind(InfoBlock, Table)")
+  
+  /*
+   * for mutator, we want to scale figure (which is one or more pictures)
+   */
+  store.addMutator({ value: "", pred: "content_height(content: Body)", action: "set_figure_height(Body.Figure, x)" })
+  
+  store.addDesign("create Body(Sequence(Picture, Table())", "one_page_flyer")
+  
+  store.addPredicate("type Picture")
+  store.addPredicate("type Block: Paragraph[]")
+  
+  
+  /**
+   * The predicate checks parent object of a picture = section_orientation(containing_section(Picture))
+   * 
+   * We want to wrap a picture if section is not landscape. There are two ways for doing this, we can either change
+   * existing section, or we can wrap picture into section. Potentially we can convert heading block into section. We are going
+   * to define mutators for all cases and learn the best approaches
+   * 
+   * first, first define method for changing page orientation and wrapping picture
+   */
+  store.addMutator({ value: "x: PageOrientation", pred: "page_orientation(section: Section)", action: "set_page_orientation(page, x)" });
+  
+  /**
+   * second wrap picture into a section
+   */
+  store.addMutator({ value: "", pred: "page_orientation(containing_picture(pic))", action: "wrap_picture(page); set_page_orientation(PictureOrientation.landscape);" });
+}
 
 /**
  * populate some sample data about two documents
