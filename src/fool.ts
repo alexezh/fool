@@ -80,6 +80,8 @@ store.addPredicate(docpart_kind(part) == "Paragraph", equal(funcCall("theme", 0)
 */
 store.addPredicate(unique(funcCall("color", part)), less(array_length(0), 3), "color")
 
+store..... picture....
+
 function *iterateHeaderLevel(): Iterable<number[]> { 
   for(let i = 0; i < 9; i++) yeild([i]); 
 }
@@ -180,18 +182,22 @@ store.addPredicateGroup("picture_layout", docpart_kind(part) == "Paragraph" && p
   /*
   * related block is a model function which returns multiple blocks with probabilities
   * we will back propagate probabilities through the system the same way
+  * 
+  * "let" defines an alias to statement on the right. It is not a variable in JS sense.
   */                                                                                                 
-  store.addClause("block := related_block(para)")
+  store.addClause("let block = related_block(para)")
 
-  /*
-  * now we have probable blocks, compute
-  */                                                                                                   
-  store.addClause("picture_height(Picture) == block_height(block)")
-                                                                                                  
-  store.addPredicate("picture_height(Picture) == block_height(Block)")
-  store.addPredicate("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
-  store.addPredicate("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
-  store.addPredicate("iif(picture_complexity(Picture) == high, section_orientation(containing_section(Picture)) == landscape")
+  store.withElem("block", () => {                                                                                         
+    /*
+    * now we have probable blocks, compute
+    */                                                                                                   
+    store.addClause("picture_height(Picture) == block_height(block)")
+                                                                                                    
+    store.addPredicate("picture_height(Picture) == block_height(Block)")
+    store.addPredicate("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
+    store.addPredicate("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
+    store.addPredicate("iif(picture_complexity(Picture) == high, section_orientation(containing_section(Picture)) == landscape")
+  }
 }
 
 /**
