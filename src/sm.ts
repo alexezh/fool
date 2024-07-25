@@ -1,5 +1,5 @@
 import { AstNode, ConstNode, SelectorNode } from "./ast"
-import { BlueprintStore } from "./blueprintstore"
+import { Blueprint } from "./blueprintstore"
 
 export type DocProp = {
   t: "Color" | "PictureHeight"
@@ -67,7 +67,7 @@ export function evalPredicate(part: DocPart, pred: AstNode): number {
   return 0;
 }
 
-export function evalDoc(store: BlueprintStore, doc: DocPart): number {
+export function evalDoc(store: Blueprint, doc: DocPart): number {
   let total: number = 0;
 
   for (let pred of store.predicates()) {

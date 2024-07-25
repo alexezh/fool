@@ -113,6 +113,16 @@ export function equal(left: AstNode, right: AstNode): OpNode {
   }
 }
 
+export function and(left: AstNode, right: AstNode): OpNode {
+  return {
+    kind: AstNodeKind.op,
+    op: new Token(TokenKind.And, "&&", 0),
+    id: makeAstId(),
+    left: left,
+    right: right
+  }
+}
+
 export function greater(left: AstNode, right: AstNode): OpNode {
   return {
     kind: AstNodeKind.op,

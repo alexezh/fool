@@ -73,8 +73,9 @@ function compilePredicate(pred: Predicate) {
 
 }
 
-export class BlueprintStore {
+export class Blueprint {
   private readonly _predicates: Predicate[] = [];
+  private groupStack: Predicate[] = [];
 
   public predicates(): Iterable<Predicate> { return this._predicates }
 
@@ -98,7 +99,7 @@ export class BlueprintStore {
     }
   }
 
-  public addGroupClause(selector: AstNode, group: (() => AstNode[])) {
+  public addGroupClause(selector: AstNode, group: (() => void)) {
     group();
   }
 
@@ -118,6 +119,14 @@ export class BlueprintStore {
         console.log(writer.toString());
       }
     }
+  }
+
+  /**
+   * takes variable representing array of choices
+   * will run modelling for each choice and select best result
+   */
+  public addChoiceClause() {
+
   }
 
   public defineRuleset(s: string) {

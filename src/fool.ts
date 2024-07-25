@@ -1,5 +1,5 @@
-import { AstNode, anyNode, constNode, equal, funcCall, genericType, greater, paramNode, partSelector, selectorRef, sub, typeRef, typeSelector, varRef } from "./ast";
-import { BlueprintStore, MemoryLane } from "./blueprintstore";
+import { AstNode, and, anyNode, constNode, equal, funcCall, genericType, greater, paramNode, partSelector, selectorRef, sub, typeRef, typeSelector, varRef } from "./ast";
+import { Blueprint, MemoryLane } from "./blueprintstore";
 import { DocPart, evalDoc } from "./sm";
 
 /**
@@ -15,7 +15,7 @@ import { DocPart, evalDoc } from "./sm";
  * changing the model
  */
 
-let store = new BlueprintStore();
+let store = new Blueprint();
 let lane = new MemoryLane();
 
 store.addType(`
@@ -180,32 +180,32 @@ store.addMutator({ value: "x: Color", pred: "color(run: Run)", action: "set_run_
  */
 store.addClause("color(Title) == color(Heading(N))")
 
-store.addPredicateGroup("picture_layout", docpart_kind(part) == "Paragraph" && paragraph_contains("picture), () => {
+store.addClauseGroup(and(funcCall("docpart_kind", part), "Paragraph"), funcCall("paragraph_contains", "picture")), () => {
   /*
   * related block is a model function which returns multiple blocks with probabilities
   * we will back propagate probabilities through the system the same way
   * 
   * "let" defines an alias to statement on the right. It is not a variable in JS sense.
-  */                                                                                                 
+  */
   store.addClause("let block = related_block(para)")
 
-  store.withElem("block", () => {
-  /*
-  * now we have probable blocks, compute
-  */
-  store.addClause("picture_height(Picture) == block_height(block)")
+  store.choiceClause("block", () => {
+    /*
+    * now we have probable blocks, compute
+    */
+    store.addClause("picture_height(Picture) == block_height(block)")
 
-  store.addClause("picture_height(Picture) == block_height(Block)")
-  store.addClause("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
-  store.addClause("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
-  store.addClause("iif(picture_complexity(Picture) == high, section_orientation(containing_section(Picture)) == landscape")
-}
+    store.addClause("picture_height(Picture) == block_height(Block)")
+    store.addClause("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
+    store.addClause("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
+    store.addClause("iif(picture_complexity(Picture) == high, section_orientation(containing_section(Picture)) == landscape")
+  }
 }
 
-  /**
-   * similar for picture size
-   */
-  store.addMutator({ value: "x: PictureSize", pred: "picture_height(page: Picture)", action: "set_picture_height(Picture, x)" })
+/**
+ * similar for picture size
+ */
+store.addMutator({ value: "x: PictureSize", pred: "picture_height(page: Picture)", action: "set_picture_height(Picture, x)" })
 
 /*
  * flyer is single page document which can have multiple designs inclidong
