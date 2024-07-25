@@ -1,6 +1,12 @@
+<<<<<<< Updated upstream
 import { AstNode, and, anyNode, constNode, equal, funcCall, genericType, greater, paramNode, partSelector, selectorRef, sub, typeRef, typeSelector, varRef } from "./ast";
 import { Blueprint, MemoryLane } from "./blueprintstore";
 import { DocPart, evalDoc } from "./sm";
+=======
+import { AstNode, anyNode, constNode, equal, funcCall, genericType, partSelector, selectorRef, sub, typeRef, typeSelector } from "./ast";
+import { BlueprintStore, MemoryLane } from "./blueprintstore";
+import { DocPart, Doc, evalDoc } from "./sm";
+>>>>>>> Stashed changes
 
 /**
  * fool is a reasoning engine which combines ideas of prolog and ML
@@ -151,6 +157,14 @@ store.addClause("x:document.all(x => x.Type == \"Title\") y:document.all(x => x.
  * add empty facts just to define parameters for the model
  */
 
+<<<<<<< Updated upstream
+=======
+// any object of Title type
+store.addPredicate("color(Title) == any",
+  typeSelector(0, typeRef("Title")),
+  equal(funcCall("color", selectorRef(0)), anyNode()))
+
+>>>>>>> Stashed changes
 /**
  * mutators provide a way for system to change model and as a result change the result of predicates
  * 
@@ -339,11 +353,11 @@ compute({ query: "font_size(Heading(1))", given: "" }) => "uniform(20, 30)"
 // 
 //store.eval(doc);
 
-let doc: DocPart = {
-  t: "Body",
+let doc = new Doc({
+  kind: "Body",
   childred: [
     {
-      t: "Title",
+      kind: "Title",
       props: [
         {
           t: "Color",
@@ -352,10 +366,10 @@ let doc: DocPart = {
       ]
     },
     {
-      t: "Paragrapm"
+      kind: "Paragraph"
     }
   ]
-}
+});
 
 console.log("hello world");
 evalDoc(store, doc);

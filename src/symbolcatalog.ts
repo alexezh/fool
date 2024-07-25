@@ -1,4 +1,4 @@
-import type { AstNode, ParamNode, TypeRefNode } from "./ast";
+import { AstNodeKind, type AstNode, type TypeRefNode } from "./ast";
 import { DocPart, PFalse, PTrue, type PBool } from "./sm";
 
 export class TypeDef {
@@ -28,7 +28,7 @@ export class SymbolCatalog {
   private readonly functions = new Map<string, FuncDef[]>();
   private readonly types = new Map<string, TypeDef>();
 
-  public getFunction(name: string, params: ParamNode[]): FuncDef {
+  public getFunction(name: string, params: AstNode[]): FuncDef {
     let list = this.functions.get(name);
     if (!list) {
       throw 'Function not found ' + name;

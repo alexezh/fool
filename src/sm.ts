@@ -6,20 +6,45 @@ export type DocProp = {
   v: string
 }
 
+export type DocPartKind =
+  "Body" | "Title" | "Heading1" | "Heading2" | "Paragraph";
+
 export type DocPart = {
-  t: "Body" | "Title" | "Heading1" | "Heading2" | "Paragrapm"
-  childred?: DocPart[]
-  props?: DocProp[]
-  color?: number;
+  kind: DocPartKind,
+  childred?: DocPart[],
+  props?: DocProp[],
+  color?: number,
 }
 
-export function visitDocParts(part: DocPart, visitor: (part: DocPart) => boolean) {
-  if (!visitor(part)) {
-    return;
+export class Doc {
+  public readonly body: DocPart;
+  // flat parts
+  private readonly allParts: DocPart[] = [];
+
+  public constructor(body: DocPart) {
+    this.body = body;
+    this.visitDocParts(this.body, (part: DocPart) => {
+      this.allParts.push(part);
+      return true;
+    })
   }
-  if (part.childred) {
-    for (let child of part.childred) {
-      visitDocParts(child, visitor);
+
+  public map() {
+    throw 'not implemented'
+  }
+
+  public mapKind(kind: DocPartKind) {
+
+  }
+
+  private visitDocParts(part: DocPart, visitor: (part: DocPart) => boolean) {
+    if (!visitor(part)) {
+      return;
+    }
+    if (part.childred) {
+      for (let child of part.childred) {
+        this.visitDocParts(child, visitor);
+      }
     }
   }
 }
@@ -47,35 +72,21 @@ export function evalSelector(part: DocPart, selector: SelectorNode): PBool {
   return PFalse;
 }
 
-export function selectMatchingParts(doc: DocPart, selector: SelectorNode): { part: DocPart, p: PBool }[] {
-  let parts: { part: DocPart, p: PBool }[] = [];
-  // in the future, we can index document by common patterns used by selector
-  // such as types of objects. For now, we can just run through
-  visitDocParts(doc, (part: DocPart) => {
-    let v = evalSelector(part, selector);
-    if (!isPFalse(v)) {
-      parts.push({ part: part, p: v });
-    }
-
-    return true;
-  })
-
-  return parts;
-}
-
 export function evalPredicate(part: DocPart, pred: AstNode): number {
   return 0;
 }
 
+<<<<<<< Updated upstream
 export function evalDoc(store: Blueprint, doc: DocPart): number {
+=======
+export function evalDoc(store: BlueprintStore, doc: Document): number {
+>>>>>>> Stashed changes
   let total: number = 0;
 
   for (let pred of store.predicates()) {
-    let parts = selectMatchingParts(doc, pred.selector as SelectorNode);
-    for (let part of parts) {
-      let res = evalPredicate(part.part, pred.predicate);
-      total += res;
-    }
+    let res = pred.eval(doc);
+    total += res;
   }
+
   return total;
 }

@@ -59,8 +59,11 @@ export type AstNode = {
   //[astTag]?: boolean;
   kind: AstNodeKind;
   id: number;
+
+  // type of the node (such as return type of function)
+  typeDef?: TypeDef;
+
   startToken?: Token;
-  parent?: AstNode;
 }
 
 export type CommentNode = AstNode & {
@@ -135,23 +138,23 @@ export function greater(left: AstNode, right: AstNode): OpNode {
 
 export type CallNode = AstNode & {
   name: string,
-  params?: ParamNode[]
+  params?: AstNode[]
 }
 
-export type ParamNode = AstNode & {
-  // set during binding
-  t?: TypeDef;
-  value: AstNode;
-}
-export function paramNode(value: AstNode): ParamNode {
-  return {
-    kind: AstNodeKind.paramDef,
-    id: makeAstId(),
-    value: value
-  }
-}
+// export type ParamNode = AstNode & {
+//   // set during binding
+//   t?: TypeDef;
+//   value: AstNode;
+// }
+// export function paramNode(value: AstNode): ParamNode {
+//   return {
+//     kind: AstNodeKind.paramDef,
+//     id: makeAstId(),
+//     value: value
+//   }
+// }
 
-export function funcCall(name: string, ...param: ParamNode[]): CallNode {
+export function funcCall(name: string, ...param: AstNode[]): CallNode {
   return {
     kind: AstNodeKind.call,
     name: name,
@@ -164,28 +167,28 @@ export type SelectorNode = AstNode & {
   /**
    * internal name of selector for references
    */
-  name: string;
+  idx: number;
   value: AstNode
 }
 
-export function typeSelector(name: string, value: AstNode): SelectorNode {
+export function typeSelector(idx: number, value: AstNode): SelectorNode {
   return {
     kind: AstNodeKind.selector,
     id: makeAstId(),
-    name: name,
+    idx: idx,
     value: value
   }
 }
 
 export type SelectorRefNode = AstNode & {
-  name: string;
+  idx: number;
 }
 
-export function selectorRef(name: string): SelectorRefNode {
+export function selectorRef(idx: number): SelectorRefNode {
   return {
     kind: AstNodeKind.selectorRef,
     id: makeAstId(),
-    name: name
+    idx: idx
   }
 }
 
