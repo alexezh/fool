@@ -76,11 +76,7 @@ export function evalPredicate(part: DocPart, pred: AstNode): number {
   return 0;
 }
 
-<<<<<<< Updated upstream
-export function evalDoc(store: Blueprint, doc: DocPart): number {
-=======
 export function evalDoc(store: BlueprintStore, doc: Document): number {
->>>>>>> Stashed changes
   let total: number = 0;
 
   for (let pred of store.predicates()) {

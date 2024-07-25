@@ -4,14 +4,8 @@ import type { Doc, DocPart, PBool } from "./sm";
 import { TypeDef, catalog } from "./symbolcatalog";
 import { TokenKind } from "./token";
 
-<<<<<<< Updated upstream
-export type Predicate = {
-  selector: AstNode[],
-=======
 export class Predicate {
-  text: string,
-  selector: SelectorNode,
->>>>>>> Stashed changes
+  selector: SelectorNode;
   predicate: AstNode
   compiledPredicate?: (part: DocPart) => number;
 
@@ -180,11 +174,7 @@ export class Blueprint {
 
   }
 
-<<<<<<< Updated upstream
   public addClause(selector?: AstNode, predicate?: AstNode) {
-=======
-  public addPredicate(s: string, selector?: SelectorNode, predicate?: AstNode) {
->>>>>>> Stashed changes
     let pred: Predicate = {
       selector: [selector],
       predicate: predicate

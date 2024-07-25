@@ -1,12 +1,9 @@
-<<<<<<< Updated upstream
-import { AstNode, and, anyNode, constNode, equal, funcCall, genericType, greater, paramNode, partSelector, selectorRef, sub, typeRef, typeSelector, varRef } from "./ast";
+import { and, constNode, equal, funcCall, greater, paramNode, varRef } from "./ast";
 import { Blueprint, MemoryLane } from "./blueprintstore";
-import { DocPart, evalDoc } from "./sm";
-=======
+import { evalDoc } from "./sm";
 import { AstNode, anyNode, constNode, equal, funcCall, genericType, partSelector, selectorRef, sub, typeRef, typeSelector } from "./ast";
-import { BlueprintStore, MemoryLane } from "./blueprintstore";
+import { MemoryLane } from "./blueprintstore";
 import { DocPart, Doc, evalDoc } from "./sm";
->>>>>>> Stashed changes
 
 /**
  * fool is a reasoning engine which combines ideas of prolog and ML
@@ -157,14 +154,6 @@ store.addClause("x:document.all(x => x.Type == \"Title\") y:document.all(x => x.
  * add empty facts just to define parameters for the model
  */
 
-<<<<<<< Updated upstream
-=======
-// any object of Title type
-store.addPredicate("color(Title) == any",
-  typeSelector(0, typeRef("Title")),
-  equal(funcCall("color", selectorRef(0)), anyNode()))
-
->>>>>>> Stashed changes
 /**
  * mutators provide a way for system to change model and as a result change the result of predicates
  * 
@@ -226,56 +215,6 @@ store.addMutator({ value: "x: PictureSize", pred: "picture_height(page: Picture)
  *   - Figure on top (which can be one or more pictures) and table on the bottom
  *   - Figure across page with table overlaying
  */
-<<<<<<< HEAD
-store.defineRuleset("one_page_flyer");
-
-/*
- * content must be on one page
- */
-store.addClause("content_height(Body) == page_size()")
-
-/*
- * content must have title, figure and table
- */
-store.addClause("content_has(body, Title) && content_has(body, Figure) && content_has(body, InfoBlock)")
-
-/*
- * need better syntax. We want to say that figure is either picture, or list of pictures  
- */
-store.addClause("figure = Picture || [Picture, next_element(Picture)]")
-
-/*
- * info block must be a table. Need to work on this if we want to format table into something
- */
-store.addClause("content_kind(InfoBlock, Table)")
-
-/*
- * for mutator, we want to scale figure (which is one or more pictures)
- */
-store.addMutator({ value: "", pred: "content_height(content: Body)", action: "set_figure_height(Body.Figure, x)" })
-
-store.addDesign("create Body(Sequence(Picture, Table())", "one_page_flyer")
-
-store.addClause("type Picture")
-store.addClause("type Block: Paragraph[]")
-
-
-/**
- * The predicate checks parent object of a picture = section_orientation(containing_section(Picture))
- * 
- * We want to wrap a picture if section is not landscape. There are two ways for doing this, we can either change
- * existing section, or we can wrap picture into section. Potentially we can convert heading block into section. We are going
- * to define mutators for all cases and learn the best approaches
- * 
- * first, first define method for changing page orientation and wrapping picture
- */
-store.addMutator({ value: "x: PageOrientation", pred: "page_orientation(section: Section)", action: "set_page_orientation(page, x)" });
-
-/**
- * second wrap picture into a section
- */
-store.addMutator({ value: "", pred: "page_orientation(containing_picture(pic))", action: "wrap_picture(page); set_page_orientation(PictureOrientation.landscape);" });
-=======
 store.addPredicateGroup("one_page_flyer", document_kind(doc, "Flyer"), () => {
 
   /*
@@ -325,7 +264,6 @@ store.addPredicateGroup("one_page_flyer", document_kind(doc, "Flyer"), () => {
    */
   store.addMutator({ value: "", pred: "page_orientation(containing_picture(pic))", action: "wrap_picture(page); set_page_orientation(PictureOrientation.landscape);" });
 }
->>>>>>> 2c13bf100d479a395bcc1c82ce58378216bd9317
 
 /**
  * populate some sample data about two documents
