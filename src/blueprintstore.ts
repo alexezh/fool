@@ -5,7 +5,6 @@ import { catalog } from "./symbolcatalog";
 import { TokenKind } from "./token";
 
 export type Predicate = {
-  text: string,
   selector: AstNode,
   predicate: AstNode
   compiled?: (part: DocPart) => number;
@@ -83,9 +82,8 @@ export class BlueprintStore {
 
   }
 
-  public addPredicate(s: string, selector?: AstNode, predicate?: AstNode) {
+  public addPredicate(selector?: AstNode, predicate?: AstNode) {
     let pred: Predicate = {
-      text: s,
       selector: selector,
       predicate: predicate
     };

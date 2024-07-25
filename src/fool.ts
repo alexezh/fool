@@ -42,7 +42,7 @@ store.addType(`
  * 
  * next predicate ensures that Title font size is at least 30
  */
-store.addPredicate(equal(docpart_kind(part), "Title"), greater(funcCall("font_size", 0), 30))
+store.addPredicate(equal(funcCall("docpart_kind", part), "Title"), greater(funcCall("font_size", 0), 30))
 
 /*
  * color(Title) == any
