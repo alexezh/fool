@@ -1,4 +1,4 @@
-import { AstNode, anyNode, constNode, equal, funcCall, genericType, paramNode, partSelector, selectorRef, sub, typeRef, typeSelector } from "./ast";
+import { AstNode, anyNode, constNode, equal, funcCall, genericType, greater, paramNode, partSelector, selectorRef, sub, typeRef, typeSelector, varRef } from "./ast";
 import { BlueprintStore, MemoryLane } from "./blueprintstore";
 import { DocPart, evalDoc } from "./sm";
 
@@ -42,7 +42,7 @@ store.addType(`
  * 
  * next predicate ensures that Title font size is at least 30
  */
-store.addPredicate(equal(funcCall("docpart_kind", part), "Title"), greater(funcCall("font_size", 0), 30))
+store.addClause(equal(funcCall("docpart_kind", varRef("part")), constNode("Title")), greater(funcCall("font_size", paramNode(constNode(0))), paramNode(constNode(30))))
 
 /*
  * color(Title) == any
@@ -56,7 +56,7 @@ store.addPredicate(equal(funcCall("docpart_kind", part), "Title"), greater(funcC
  * The distribution of any_color is affected by user selection. If we know that user changed Title color
  * we will reset probability to look like sigmoid, with user selected value having highest probability
  */
-store.addPredicate(docpart_kind(part) == "Title", equal(funcCall("color", 0), any_color()))
+store.addClause(equal(funcCall("docpart_kind", part), "Title"), equal(funcCall("color", 0), any_color()))
 
 /*
  * similarly, we want to ensure that paragraphs are consistent across the board
@@ -67,23 +67,21 @@ store.addPredicate(docpart_kind(part) == "Title", equal(funcCall("color", 0), an
  * this way, if user selected 3 colors across paragraphs, we will keep all three colors and suggest other 
  * paragraphs to one of them
  */
-store.addPredicate(docpart_kind(part) == "Paragraph", equal(funcCall("color", 0), any_color()))
+store.addClause(equal(funcCall("docpart_kind", part), "Paragraph"), equal(funcCall("color", 0), any_color()))
 
 /*
  * however, this rules might have higher value as it checks that all paragraphs are from same theme
  */
-store.addPredicate(docpart_kind(part) == "Paragraph", equal(funcCall("theme", 0), any_theme()))
+store.addClause(equal(funcCall("docpart_kind", part), docpart_kind(part) == "Paragraph"), equal(funcCall("theme", 0), any_theme()))
 
 /*
 * limits number of colors across paragraphs to 3
 * the predicate does not have mutators by itself, but it references rules which are affected
 */
-store.addPredicate(unique(funcCall("color", part)), less(array_length(0), 3), "color")
+store.addClause(unique(funcCall("color", part)), less(array_length(0), 3), "color")
 
-store..... picture....
-
-function *iterateHeaderLevel(): Iterable<number[]> { 
-  for(let i = 0; i < 9; i++) yeild([i]); 
+function* iterateHeaderLevel(): Iterable<number[]> {
+  for (let i = 0; i < 9; i++) yield ([i]);
 }
 
 /*
@@ -91,16 +89,16 @@ function *iterateHeaderLevel(): Iterable<number[]> {
  *
  * for any heading, checks that color of heading is darker than title color
  */
-store.addMacroPredicate(
+store.addMacroClause(
   iterateHeaderLevel,
   [
-    equal(docpart_kind(part), "Title"), 
-    equal(docpart_kind(part), "Heading$1"), 
+    equal(docpart_kind(part), "Title"),
+    equal(docpart_kind(part), "Heading$1"),
   ],
   color_darker(funcCall("color", 0), funcCall("color", 1)))
 
-function *iterateHeaderPairs(): Iterable<number[]> { 
-  for(let i = 0; i < 9; i++) yeild([i, i+1]); 
+function* iterateHeaderPairs(): Iterable<number[]> {
+  for (let i = 0; i < 9; i++) yeild([i, i + 1]);
 }
 
 /*
@@ -109,58 +107,50 @@ function *iterateHeaderPairs(): Iterable<number[]> {
  * for heading hierarchy, force hierarchy color
  * the colors can be different in different parts of document
  */
-store.addMacroPredicate(
-  iterateHeaderPairs,
+store.addMacroClause(
+  iterateHeaderPairs(),
   [
-    equal(docpart_kind(part), "Heading$0"), 
-    equal(docpart_kind(part), "Heading$1"), 
+    equal(docpart_kind(part), "Heading$0"),
+    equal(docpart_kind(part), "Heading$1"),
   ],
   color_same(funcCall("color", 0), funcCall("color", 1)))
 
 /**
  * inline selector
  */
-store.addPredicate("font_size(:Title) > 30)")
+store.addClause("font_size(:Title) > 30)")
 
 /**
  * aliasing variable
  */
-store.addPredicate("x:Title => font_size(x) > 30)")
+store.addClause("x:Title => font_size(x) > 30)")
 
 /**
  * using default alias
  */
-store.addPredicate(":Title => font_size(_) > 30)")
+store.addClause(":Title => font_size(_) > 30)")
 
 /**
  * predicate can also check multiple elements, in which case will run over 
  * all combination of values
  */
-store.addPredicate(":Title :Heading<1> => font_size(Title) > font_size(Heading<1>)")
+store.addClause(":Title :Heading<1> => font_size(Title) > font_size(Heading<1>)")
 
 /**
    bit of meta programming. Heading<1> etc are types
    below we are saying that heading color should match between different levels
  */
-store.addPredicate(":Heading<N> :Heading<N-1> => font_size(Heading<N>) >= font_size(Heading<N-1>)")
+store.addClause(":Heading<N> :Heading<N-1> => font_size(Heading<N>) >= font_size(Heading<N-1>)")
 
 /**
  * the above is shorthand for following LINQ type expression
  */
-store.addPredicate("x:document.all(x => x.Type == \"Title\") y:document.all(x => x.Type == \"Heading<1>\")) => font_size(x) > font_size(y))")
+store.addClause("x:document.all(x => x.Type == \"Title\") y:document.all(x => x.Type == \"Heading<1>\")) => font_size(x) > font_size(y))")
 
 /**
  * add empty facts just to define parameters for the model
  */
 
-<<<<<<< HEAD
-// any object of Title type
-store.addPredicate("color(Title) == any",
-  typeSelector("1", typeRef("Title")),
-  equal(funcCall("color", paramNode(selectorRef("1"))), anyNode()))
-
-=======
->>>>>>> 2c13bf100d479a395bcc1c82ce58378216bd9317
 /**
  * mutators provide a way for system to change model and as a result change the result of predicates
  * 
@@ -188,7 +178,7 @@ store.addMutator({ value: "x: Color", pred: "color(run: Run)", action: "set_run_
 /**
  * documents can have same color
  */
-store.addPredicate("color(Title) == color(Heading(N))")
+store.addClause("color(Title) == color(Heading(N))")
 
 store.addPredicateGroup("picture_layout", docpart_kind(part) == "Paragraph" && paragraph_contains("picture), () => {
   /*
@@ -199,23 +189,23 @@ store.addPredicateGroup("picture_layout", docpart_kind(part) == "Paragraph" && p
   */                                                                                                 
   store.addClause("let block = related_block(para)")
 
-  store.withElem("block", () => {                                                                                         
-    /*
-    * now we have probable blocks, compute
-    */                                                                                                   
-    store.addClause("picture_height(Picture) == block_height(block)")
-                                                                                                    
-    store.addPredicate("picture_height(Picture) == block_height(Block)")
-    store.addPredicate("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
-    store.addPredicate("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
-    store.addPredicate("iif(picture_complexity(Picture) == high, section_orientation(containing_section(Picture)) == landscape")
-  }
+  store.withElem("block", () => {
+  /*
+  * now we have probable blocks, compute
+  */
+  store.addClause("picture_height(Picture) == block_height(block)")
+
+  store.addClause("picture_height(Picture) == block_height(Block)")
+  store.addClause("picture_height(Picture) + line_height(Block) * 2 < block_height(Block)")
+  store.addClause("iif(picture_category(Picture) == Headshot, picture_size(Picture) < page_size() / 3")
+  store.addClause("iif(picture_complexity(Picture) == high, section_orientation(containing_section(Picture)) == landscape")
+}
 }
 
-/**
- * similar for picture size
- */
-store.addMutator({ value: "x: PictureSize", pred: "picture_height(page: Picture)", action: "set_picture_height(Picture, x)" })
+  /**
+   * similar for picture size
+   */
+  store.addMutator({ value: "x: PictureSize", pred: "picture_height(page: Picture)", action: "set_picture_height(Picture, x)" })
 
 /*
  * flyer is single page document which can have multiple designs inclidong
@@ -228,22 +218,22 @@ store.defineRuleset("one_page_flyer");
 /*
  * content must be on one page
  */
-store.addPredicate("content_height(Body) == page_size()")
+store.addClause("content_height(Body) == page_size()")
 
 /*
  * content must have title, figure and table
  */
-store.addPredicate("content_has(body, Title) && content_has(body, Figure) && content_has(body, InfoBlock)")
+store.addClause("content_has(body, Title) && content_has(body, Figure) && content_has(body, InfoBlock)")
 
 /*
  * need better syntax. We want to say that figure is either picture, or list of pictures  
  */
-store.addPredicate("figure = Picture || [Picture, next_element(Picture)]")
+store.addClause("figure = Picture || [Picture, next_element(Picture)]")
 
 /*
  * info block must be a table. Need to work on this if we want to format table into something
  */
-store.addPredicate("content_kind(InfoBlock, Table)")
+store.addClause("content_kind(InfoBlock, Table)")
 
 /*
  * for mutator, we want to scale figure (which is one or more pictures)
@@ -252,8 +242,8 @@ store.addMutator({ value: "", pred: "content_height(content: Body)", action: "se
 
 store.addDesign("create Body(Sequence(Picture, Table())", "one_page_flyer")
 
-store.addPredicate("type Picture")
-store.addPredicate("type Block: Paragraph[]")
+store.addClause("type Picture")
+store.addClause("type Block: Paragraph[]")
 
 
 /**
@@ -273,49 +263,49 @@ store.addMutator({ value: "x: PageOrientation", pred: "page_orientation(section:
 store.addMutator({ value: "", pred: "page_orientation(containing_picture(pic))", action: "wrap_picture(page); set_page_orientation(PictureOrientation.landscape);" });
 =======
 store.addPredicateGroup("one_page_flyer", document_kind(doc, "Flyer"), () => {
-                  
+
   /*
    * content must be on one page
    */
   store.addPredicate("content_height(Body) == page_size()")
-  
+
   /*
    * content must have title, figure and table
    */
   store.addPredicate("content_has(body, Title) && content_has(body, Figure) && content_has(body, InfoBlock)")
-  
+
   /*
-   * need better syntax. We want to say that figure is either picture, or list of pictures  
+   * need better syntax. We want to say that figure is either picture, or list of pictures
    */
   store.addPredicate("figure = Picture || [Picture, next_element(Picture)]" })
-  
+
   /*
    * info block must be a table. Need to work on this if we want to format table into something
    */
   store.addPredicate("content_kind(InfoBlock, Table)")
-  
+
   /*
    * for mutator, we want to scale figure (which is one or more pictures)
    */
   store.addMutator({ value: "", pred: "content_height(content: Body)", action: "set_figure_height(Body.Figure, x)" })
-  
+
   store.addDesign("create Body(Sequence(Picture, Table())", "one_page_flyer")
-  
+
   store.addPredicate("type Picture")
   store.addPredicate("type Block: Paragraph[]")
-  
-  
+
+
   /**
    * The predicate checks parent object of a picture = section_orientation(containing_section(Picture))
-   * 
+   *
    * We want to wrap a picture if section is not landscape. There are two ways for doing this, we can either change
    * existing section, or we can wrap picture into section. Potentially we can convert heading block into section. We are going
    * to define mutators for all cases and learn the best approaches
-   * 
+   *
    * first, first define method for changing page orientation and wrapping picture
    */
   store.addMutator({ value: "x: PageOrientation", pred: "page_orientation(section: Section)", action: "set_page_orientation(page, x)" });
-  
+
   /**
    * second wrap picture into a section
    */

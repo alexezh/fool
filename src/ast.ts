@@ -41,6 +41,7 @@ export enum AstNodeKind {
   comment = 21,
   any = 22,
   typeRef = 23,
+  varRef = 24,
   selector = 100,
   selectorRef = 101
 }
@@ -106,6 +107,16 @@ export function equal(left: AstNode, right: AstNode): OpNode {
   return {
     kind: AstNodeKind.op,
     op: new Token(TokenKind.Equal, "==", 0),
+    id: makeAstId(),
+    left: left,
+    right: right
+  }
+}
+
+export function greater(left: AstNode, right: AstNode): OpNode {
+  return {
+    kind: AstNodeKind.op,
+    op: new Token(TokenKind.Greater, ">", 0),
     id: makeAstId(),
     left: left,
     right: right
@@ -246,12 +257,20 @@ export type OpNode = AstNode & {
 }
 
 export type ConstNode = AstNode & {
-  value: Token | string;
+  value: Token | string | number;
 }
 
-export function constNode(val: string): ConstNode {
+export function constNode(val: string | number): ConstNode {
   return {
     kind: AstNodeKind.const,
+    id: makeAstId(),
+    value: val
+  }
+}
+
+export function varRef(val: string): ConstNode {
+  return {
+    kind: AstNodeKind.varRef,
     id: makeAstId(),
     value: val
   }

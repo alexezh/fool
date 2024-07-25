@@ -5,7 +5,7 @@ import { catalog } from "./symbolcatalog";
 import { TokenKind } from "./token";
 
 export type Predicate = {
-  selector: AstNode,
+  selector: AstNode[],
   predicate: AstNode
   compiled?: (part: DocPart) => number;
 }
@@ -82,9 +82,9 @@ export class BlueprintStore {
 
   }
 
-  public addPredicate(selector?: AstNode, predicate?: AstNode) {
+  public addClause(selector?: AstNode, predicate?: AstNode) {
     let pred: Predicate = {
-      selector: selector,
+      selector: [selector],
       predicate: predicate
     };
     compilePredicate(pred);
@@ -95,6 +95,28 @@ export class BlueprintStore {
       compileNode(predicate, writer);
 
       console.log(writer.toString());
+    }
+  }
+
+  public addGroupClause(selector: AstNode, group: (() => AstNode[])) {
+    group();
+  }
+
+  public addMacroClause(macroIter: Iterable<number[]>, selector?: AstNode[], predicate?: AstNode) {
+    for (let macroPara of macroIter) {
+      let pred: Predicate = {
+        selector: selector,
+        predicate: predicate
+      };
+      compilePredicate(pred);
+      this._predicates.push(pred);
+
+      if (predicate) {
+        let writer = new JsWriter();
+        compileNode(predicate, writer);
+
+        console.log(writer.toString());
+      }
     }
   }
 
