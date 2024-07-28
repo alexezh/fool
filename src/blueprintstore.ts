@@ -14,14 +14,15 @@ export class Predicate {
 
     // in the future, we can index document by common patterns used by selector
     // such as types of objects. For now, we can just run through
-    this.visitDocParts(doc, (part: DocPart) => {
-      let v = evalSelector(part, selector);
-      if (!isPFalse(v)) {
-        parts.push({ part: part, p: v });
-      }
 
-      return true;
-    })
+    // this.visitDocParts(doc, (part: DocPart) => {
+    //   let v = evalSelector(part, selector);
+    //   if (!isPFalse(v)) {
+    //     parts.push({ part: part, p: v });
+    //   }
+
+    //   return true;
+    // })
 
     return parts;
   }
@@ -48,7 +49,7 @@ function compileOp(ast: OpNode, writer: JsWriter) {
     function pred(node) { return color_equal(color_part(node), any_color()) }
 */
 
-function resolveType(ast: AstNode) {
+function resolveType(ast: AstNode): TypeDef {
   switch (ast.kind) {
     case AstNodeKind.const:
     case AstNodeKind.selectorRef:

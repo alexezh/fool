@@ -136,6 +136,21 @@ export function greater(left: AstNode, right: AstNode): OpNode {
   }
 }
 
+export function less(left: AstNode, right: AstNode): OpNode {
+  return {
+    kind: AstNodeKind.op,
+    op: new Token(TokenKind.Greater, "<", 0),
+    id: makeAstId(),
+    left: left,
+    right: right
+  }
+}
+
+export function unique(val: AstNode): AstNode {
+  throw 'not impl';
+}
+
+
 export type CallNode = AstNode & {
   name: string,
   params?: AstNode[]
